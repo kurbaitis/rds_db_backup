@@ -1,5 +1,5 @@
 PATH
-  remote: ../../
+  remote: ../
   specs:
     rds_db_backup (0.1.0)
 

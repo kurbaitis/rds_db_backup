@@ -99,12 +99,12 @@ module RdsDbBackup
         result = false
 
         while !result do
-          sleep 10
+          sleep 5 
         end
       end
       
       def run_rds(command, params)
-        run "#{rds(command)} #{params}"
+        run("#{rds(command)} #{params}").to_i
       end
 
     end

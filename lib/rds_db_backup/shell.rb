@@ -12,9 +12,6 @@ module RdsDbBackup
     end
 
     def run(command, params = {})
-#      ENV['HOME'] = tmp_dir
-#      ENV['PWD'] = ENV['HOME']
-
       pwd = params[:pwd] || @pwd || ENV.fetch('PWD')
       command += ' 2>&1'
 
@@ -42,11 +39,6 @@ module RdsDbBackup
     
     private
 
-    def load_dot_env_if_exists(pwd)
-      env_file = File.join(pwd, '.env')
-      Dotenv.load(env_file) if File.exists?(env_file)
-    end
-
     def fail(command, code)
       concat "Command failed with code '#{code}'"
     end
@@ -55,13 +47,5 @@ module RdsDbBackup
       Time.now.to_datetime
     end
 
-    def home_path
-      if ENV['HOME'].present? && ENV['HOME'] != '/root'
-        ENV['HOME']
-      else
-        '/home/webapp'
-      end
-    end
-    
   end
 end
