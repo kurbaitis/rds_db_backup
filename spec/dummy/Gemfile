@@ -1,0 +1,11 @@
+source 'https://rubygems.org'
+
+
+gem 'rails', '4.2.3'
+gem 'rds_db_backup', path: '../../'
+
+group :development, :test do
+  gem 'pry'
+  gem 'web-console', '~> 2.0'
+end
+
