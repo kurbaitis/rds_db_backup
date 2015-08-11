@@ -13,9 +13,10 @@ module RdsDbBackup
 
     def run(command, params = {})
       pwd = params[:pwd] || @pwd || ENV.fetch('PWD')
+      env_variables = build_env_variables(params)
       command += ' 2>&1'
 
-      concat "#{command}\n"
+      concat [env_variables, command, "\n"].join(' ')
 
       Open3.popen3(command, chdir: pwd) do |i,o,e,t|
         result = o.read.chomp
@@ -38,6 +39,11 @@ module RdsDbBackup
     end
     
     private
+    
+    def build_env_variables(params)
+      params.delete(:pwd)
+      params.to_a.map { |element| element.join('=') }.join(' ')
+    end
 
     def fail(command, code)
       concat "Command failed with code '#{code}'"

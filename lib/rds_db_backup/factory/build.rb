@@ -11,7 +11,7 @@ module RdsDbBackup
       end
 
       def description
-        "DB Backup '#{name}' completed with state '#{state}'"
+        "DB Backup '#{name}' completed"
       end
 
       private
@@ -24,7 +24,7 @@ module RdsDbBackup
         wait_until :snapshot_availability?
 
         concat "Creating an instance #{backup_instance_id} from #{snapshot_id} snapshot."
-        run_rds('restore-db-instance-from-db-snapshot', "#{backup_instance_id} --db-snapshot-identifier #{snapshot_id} --availability-zone eu-west-1c --db-instance-class db.m1.small #{credentials}")
+        run_rds('restore-db-instance-from-db-snapshot', "#{backup_instance_id} --db-snapshot-identifier #{snapshot_id} --region #{region} --db-instance-class db.m1.small #{credentials}")
 
         concat "Waiting until instance is available..."
         wait_until :instance_availability?
@@ -45,25 +45,52 @@ module RdsDbBackup
         wait_until :instance_availability?
 
         concat "Creating a dump from #{backup_instance_id} with filename #{dump_filename}."
-        run "mysqldump #{db_credentials} --verbose | gzip > #{dump_filename}"
+        run "mysqldump #{db_credentials} --verbose | gzip > #{dump_filename_with_path}"
+        
+        concat "Uploading the dump to #{db_bucket}."
+        run_with_clean_env "aws s3 cp #{dump_filename_with_path} s3://#{db_bucket}/#{dump_filename} --region #{region}", aws_params
+
+        concat "Removing dump #{dump_filename}."
+        run "rm -rf #{dump_filename_with_path}"
+
+        concat "Deleting instance #{backup_instance_id}."
+        run_rds('delete-db-instance', "#{backup_instance_id} --skip-final-snapshot -f #{credentials}")
+
+        concat "Deleting snapshot #{snapshot_id}."
+        run_rds('delete-db-snapshot', "#{snapshot_id} -f #{credentials}")
         
         concat description
       end
       
+      def time_i
+        @time_i ||= time.to_i
+      end
+
       def backup_name
         name.dasherize
       end
 
       def snapshot_id
-        @snapshot_id ||= "#{backup_name}-production-copy-#{time.to_i}"
+        @snapshot_id ||= "#{backup_name}-production-copy-#{time_i}"
       end
 
       def dump_filename
-        @dump_filename ||= "#{db_name}-#{time}.tar.gz"
+        @dump_filename ||= "#{db_name}-#{time_i}.tar.gz"
+      end
+      
+      def dump_filename_with_path
+        File.join(tmp_dir, dump_filename)
       end
 
       def backup_instance_id
         "tempdb-#{backup_name}-production"
+      end
+      
+      def aws_params
+        {
+          'AWS_ACCESS_KEY_ID' => aws_access_key_id,
+          'AWS_SECRET_ACCESS_KEY' => aws_secret_access_key
+        }
       end
 
       def credentials
@@ -71,7 +98,7 @@ module RdsDbBackup
       end
 
       def db_credentials
-        "-u#{db_username} -p#{db_password} -h#{backup_instance_id}.cf3espmcpxft.eu-west-1.rds.amazonaws.com  -P#{db_port} #{db_name}"
+        "-u#{db_username} -p#{db_password} -h#{backup_instance_id}.#{db_host_name_domain}  -P#{db_port} #{db_name}"
       end
 
       def snapshot_availability?
@@ -96,15 +123,15 @@ module RdsDbBackup
       end
 
       def wait_until(method)
-        result = false
-
-        while !result do
-          sleep 5 
-        end
+        result = send(method).to_i 
+        return if result == 1
+        
+        sleep 10 
+        wait_until method
       end
       
       def run_rds(command, params)
-        run("#{rds(command)} #{params}").to_i
+        run "#{rds(command)} #{params}"
       end
 
     end

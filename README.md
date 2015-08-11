@@ -4,6 +4,13 @@ Welcome to your new gem! In this directory, you'll find the files you need to be
 
 TODO: Delete this and the text above, and describe your gem
 
+## Prerequisites
+
+- Java ~> 7.0 (https://www.java.com)
+- AWS CLI (https://aws.amazon.com/cli)
+- AWS RDS CLI (https://aws.amazon.com/developertools/Amazon-RDS/2928)
+- MySQL (currently works only with MySQL type RDS instances)
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -19,10 +26,12 @@ And then execute:
 Or install it yourself as:
 
     $ gem install rds_db_backup
+## Configuration
 
 ## Usage
+Build DB backup and push to S3:
 
-TODO: Write usage instructions here
+    $ RdsDbBackup::Factory::Build.new('your_database_name').perform
 
 ## Development
 
