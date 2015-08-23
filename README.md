@@ -60,7 +60,7 @@ RdsDbBackup::Factory::Build.new('your_database_name').perform
 
 ## Contributing
 
-1. Fork it ( https://github.com/[my-github-username]/rds_db_backup/fork )
+1. Fork it ( https://github.com/kurbaitis/rds_db_backup/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
